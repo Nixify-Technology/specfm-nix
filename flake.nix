@@ -6,7 +6,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     intel-mpi.url = "github:Nixify-Technology/intel-mpi-nix";
-
+    shell-utils.url = "github:waltermoreira/shell-utils";
   };
 
   outputs =
@@ -14,6 +14,7 @@
     , nixpkgs
     , flake-utils
     , intel-mpi
+    , shell-utils
     }:
 
     flake-utils.lib.eachDefaultSystem (system:
@@ -23,6 +24,7 @@
         inherit system;
       };
 
+      shell = shell-utils.myShell.${system};
       mpi = intel-mpi.packages.${system}.default;
 
       hdf5 = pkgs.stdenv.mkDerivation
@@ -30,6 +32,7 @@
           name = "hdf5";
           buildInputs = [
             pkgs.ps
+            pkgs.gfortran
           ];
           nativeBuildInputs = [
             pkgs.breakpointHook
@@ -60,9 +63,21 @@
       # };
 
     in
-    rec {
+    {
       packages = {
         default = hdf5;
+      };
+      devShells = {
+        default = shell {
+          name = "specfm";
+          packages = with pkgs; [
+            gfortran
+          ];
+          extraInitRc = ''
+            source ${mpi}/env/vars.sh
+            export MPI=${mpi}
+          '';
+        };
       };
     });
 
