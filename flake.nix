@@ -5,7 +5,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    intel-mpi.url = "github:Nixify-Technology/intel-mpi-nix";
     shell-utils.url = "github:waltermoreira/shell-utils";
   };
 
@@ -13,7 +12,6 @@
     { self
     , nixpkgs
     , flake-utils
-    , intel-mpi
     , shell-utils
     }:
 
@@ -25,7 +23,7 @@
       };
 
       shell = shell-utils.myShell.${system};
-      mpi = intel-mpi.packages.${system}.default;
+      # mpi = intel-mpi.packages.${system}.default;
 
       hdf5 = pkgs.stdenv.mkDerivation
         {
@@ -33,6 +31,7 @@
           buildInputs = [
             pkgs.ps
             pkgs.gfortran
+            pkgs.mpich
           ];
           nativeBuildInputs = [
             pkgs.breakpointHook
@@ -45,7 +44,7 @@
             };
           buildPhase = ''
             echo "Inside buildPhase.."
-            source ${mpi}/env/vars.sh
+            
             mkdir -p $out/hdf5
             CC=mpicc FC=mpif90 ./configure --enable-fortran --enable-parallel --prefix=$out/hdf5 --enable-shared --enable-static
             make -j12
@@ -54,18 +53,30 @@
           '';
           phases = [ "unpackPhase" "buildPhase" ];
         };
-      # app = pkgs.stdenv.mkDerivation {
-      #   name = "specfm";
-      #   installPhase = ''
-      #     mkdir -p $out;
-      #     cp ${intel-mpi} $out
-      #   '';
-      # };
+
+      app = pkgs.stdenv.mkDerivation {
+        name = "specfm";
+        src = pkgs.fetchFromGitHub
+          {
+            owner = "SPECFEM";
+            repo = "specfem3d_globe";
+            rev = "46dd8d685471e82bbac9cf4c3d60f4772a8b7971";
+            hash = "sha256-lSXSLilPHWZ9BWZsmKZXCYDn3ICH1+Lcjm5xEL+uqUA=";
+          };
+
+        buildPhase = ''
+          echo "Inside build phase...
+          mkdir -p $out
+          ./configure --enable-vectorization
+          MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" make all
+        '';
+        phases = [ "unpackPhase" "buildPhase" ];
+      };
 
     in
     {
       packages = {
-        default = hdf5;
+        default = app;
       };
       devShells = {
         default = shell {
@@ -73,10 +84,6 @@
           packages = with pkgs; [
             gfortran
           ];
-          extraInitRc = ''
-            source ${mpi}/env/vars.sh
-            export MPI=${mpi}
-          '';
         };
       };
     });
