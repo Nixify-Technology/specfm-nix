@@ -56,19 +56,25 @@
 
       app = pkgs.stdenv.mkDerivation {
         name = "specfm";
+        buildInputs = [
+          pkgs.ps
+          pkgs.gfortran
+          pkgs.mpich
+        ];
         src = pkgs.fetchFromGitHub
           {
             owner = "SPECFEM";
             repo = "specfem3d_globe";
             rev = "46dd8d685471e82bbac9cf4c3d60f4772a8b7971";
             hash = "sha256-lSXSLilPHWZ9BWZsmKZXCYDn3ICH1+Lcjm5xEL+uqUA=";
+            fetchSubmodules = true;
           };
 
         buildPhase = ''
-          echo "Inside build phase...
-          mkdir -p $out
-          ./configure --enable-vectorization
-          MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" make all
+          echo "Inside build phase..."
+          mkdir -p $out/bin
+          ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
+          cp bin/* $out/bin
         '';
         phases = [ "unpackPhase" "buildPhase" ];
       };
