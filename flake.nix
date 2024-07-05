@@ -87,9 +87,7 @@
       devShells = {
         default = shell {
           name = "specfm";
-          packages = with pkgs; [
-            gfortran
-          ];
+          packages = [ hdf5 app pkgs.gfortran ];
         };
       };
     });
