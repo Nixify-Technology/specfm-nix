@@ -66,7 +66,7 @@
             owner = "SPECFEM";
             repo = "specfem3d_globe";
             rev = "46dd8d685471e82bbac9cf4c3d60f4772a8b7971";
-            hash = "sha256-lSXSLilPHWZ9BWZsmKZXCYDn3ICH1+Lcjm5xEL+uqUA=";
+            hash = "sha256-S6MA1otYezoAuWOB6i2yKlWauy9QllWRXyJYVSBZPw8=";
             fetchSubmodules = true;
           };
 
