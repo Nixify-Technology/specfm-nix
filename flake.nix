@@ -6,6 +6,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     shell-utils.url = "github:waltermoreira/shell-utils";
+    intel-mpi.url = "github:Nixify-Technology/intel-mpi-nix";
   };
 
   outputs =
@@ -13,6 +14,7 @@
     , nixpkgs
     , flake-utils
     , shell-utils
+    , intel-mpi
     }:
 
     flake-utils.lib.eachDefaultSystem (system:
@@ -23,7 +25,7 @@
       };
 
       shell = shell-utils.myShell.${system};
-      # mpi = intel-mpi.packages.${system}.default;
+      mpi = intel-mpi.packages.${system}.default;
 
       hdf5 = pkgs.stdenv.mkDerivation
         {
@@ -61,6 +63,10 @@
           pkgs.gfortran
           pkgs.mpich
         ];
+        # Attempt to "force" linking in intel-mpi;
+        #  cf., https://nixos.org/manual/nixpkgs/stable/#setup-hook-autopatchelfhook
+        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+        runtimeDependencies = [ mpi ];
         src = pkgs.fetchFromGitHub
           {
             owner = "SPECFEM";
