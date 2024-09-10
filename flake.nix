@@ -76,13 +76,21 @@
             fetchSubmodules = true;
           };
 
+        dontInstall = true;
+        doDist = true;
         buildPhase = ''
           echo "Inside build phase..."
           mkdir -p $out/bin
           ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
           cp bin/* $out/bin
         '';
-        phases = [ "unpackPhase" "buildPhase" ];
+        distPhase = ''
+          for f in $(ls $out/bin); do
+            RPATH_OLD=$(patchelf --print-rpath $out/bin/$f)
+            patchelf --set-rpath "${mpi}/lib:${mpi}/lib/release:$RPATH_OLD" $out/bin/$f
+          done
+          patchelf --add-rpath "${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.glibc}/lib" $out/bin/*
+        '';
       };
 
     in
