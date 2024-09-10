@@ -105,11 +105,11 @@
         "shell-utils": "shell-utils"
       },
       "locked": {
-        "lastModified": 1723620512,
-        "narHash": "sha256-rcBWbq+i3PaORiGRvxfpyw2Dl4b6YJQuQA+kwZWT2cg=",
+        "lastModified": 1726004233,
+        "narHash": "sha256-i2jCu1yjM6Vgb5RiJ03ZveHWg2QQ4RPxCi9KSayjLkg=",
         "owner": "Nixify-Technology",
         "repo": "intel-mpi-nix",
-        "rev": "1ff83a188e430cef2dc9a9de88be81adb56dbb59",
+        "rev": "05a9accc67a3387841b284c09e7d6f55ab340365",
         "type": "github"
       },
       "original": {
