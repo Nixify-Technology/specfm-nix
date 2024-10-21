@@ -24,8 +24,11 @@
         inherit system;
       };
 
+      config = nixpkgs.lib.trivial.importJSON ./config.json;
       shell = shell-utils.myShell.${system};
-      mpi = intel-mpi.packages.${system}.default;
+      # mpi = pkgs.mpich;
+      mpi =
+        if config.tacc_execution then intel-mpi.packages.${system}.default else pkgs.mpich;
 
       hdf5 = pkgs.stdenv.mkDerivation
         {
@@ -51,7 +54,6 @@
             CC=mpicc FC=mpif90 ./configure --enable-fortran --enable-parallel --prefix=$out/hdf5 --enable-shared --enable-static
             make -j12
             make install
-
           '';
           phases = [ "unpackPhase" "buildPhase" ];
         };
@@ -63,7 +65,7 @@
           pkgs.gfortran
           pkgs.mpich
         ];
-        # Attempt to "force" linking in intel-mpi;
+        # Attempt to "force" linking adding intel-mpi to rpath;
         #  cf., https://nixos.org/manual/nixpkgs/stable/#setup-hook-autopatchelfhook
         nativeBuildInputs = [ pkgs.autoPatchelfHook ];
         runtimeDependencies = [ mpi ];
@@ -81,6 +83,7 @@
           mkdir -p $out/bin
           ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
           cp bin/* $out/bin
+          cp ${./config.json} $out/config.json
         '';
         phases = [ "unpackPhase" "buildPhase" ];
       };
