@@ -27,33 +27,13 @@
       shell = shell-utils.myShell.${system};
       mpi = intel-mpi.packages.${system}.default;
 
-      hdf5 = pkgs.stdenv.mkDerivation
+      src = pkgs.fetchFromGitHub
         {
-          name = "hdf5";
-          buildInputs = [
-            pkgs.ps
-            pkgs.gfortran
-            pkgs.mpich
-          ];
-          nativeBuildInputs = [
-            pkgs.breakpointHook
-
-          ];
-          src = pkgs.fetchzip
-            {
-              url = "https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.13/hdf5-1.13.3/src/hdf5-1.13.3.tar.gz";
-              hash = "sha256-+QHhzaPwagWQebOUXElC+J80NXH0lugYPoizRCYOAlA=";
-            };
-          buildPhase = ''
-            echo "Inside buildPhase.."
-            
-            mkdir -p $out/hdf5
-            CC=mpicc FC=mpif90 ./configure --enable-fortran --enable-parallel --prefix=$out/hdf5 --enable-shared --enable-static
-            make -j12
-            make install
-
-          '';
-          phases = [ "unpackPhase" "buildPhase" ];
+          owner = "SPECFEM";
+          repo = "specfem3d_globe";
+          rev = "46dd8d685471e82bbac9cf4c3d60f4772a8b7971";
+          hash = "sha256-S6MA1otYezoAuWOB6i2yKlWauy9QllWRXyJYVSBZPw8=";
+          fetchSubmodules = true;
         };
 
       app = pkgs.stdenv.mkDerivation {
@@ -63,14 +43,7 @@
           pkgs.gfortran
           mpi
         ];
-        src = pkgs.fetchFromGitHub
-          {
-            owner = "SPECFEM";
-            repo = "specfem3d_globe";
-            rev = "46dd8d685471e82bbac9cf4c3d60f4772a8b7971";
-            hash = "sha256-S6MA1otYezoAuWOB6i2yKlWauy9QllWRXyJYVSBZPw8=";
-            fetchSubmodules = true;
-          };
+        inherit src;
 
         buildPhase = ''
           mkdir -p $out/bin
@@ -80,15 +53,45 @@
         phases = [ "unpackPhase" "buildPhase" ];
       };
 
+      patchedApp = pkgs.stdenv.mkDerivation {
+        name = "specfm";
+        buildInputs = [
+          pkgs.ps
+          pkgs.gfortran
+          pkgs.mpich
+        ];
+        nativeBuildInputs = [ pkgs.autoPatchelfHook ];
+        runtimeDependencies = [ mpi ];
+        inherit src;
+
+        dontInstall = true;
+        doDist = true;
+        buildPhase = ''
+          echo "Inside build phase..."
+          mkdir -p $out/bin
+          ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
+          cp bin/* $out/bin
+        '';
+        distPhase = ''
+          for f in $(ls $out/bin); do
+            RPATH_OLD=$(patchelf --print-rpath $out/bin/$f)
+            patchelf --set-rpath "${mpi}/lib:${mpi}/lib/release:$RPATH_OLD" $out/bin/$f
+          done
+          patchelf --add-rpath "${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.glibc}/lib" $out/bin/*
+        '';
+      };
+
     in
     {
       packages = {
         default = app;
+        compiledApp = app;
+        patchedApp = patchedApp;
       };
       devShells = {
         default = shell {
           name = "specfm";
-          packages = [ hdf5 app pkgs.gfortran ];
+          packages = [ mpi app pkgs.gfortran ];
         };
       };
     });
