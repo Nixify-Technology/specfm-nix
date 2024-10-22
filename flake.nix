@@ -73,8 +73,6 @@
           };
 
         buildPhase = ''
-          source ${mpi}/env/vars.sh
-          echo "Inside build phase..."
           mkdir -p $out/bin
           ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
           cp bin/* $out/bin
