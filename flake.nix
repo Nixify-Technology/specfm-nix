@@ -24,8 +24,11 @@
         inherit system;
       };
 
+      config = nixpkgs.lib.trivial.importJSON ./config.json;
       shell = shell-utils.myShell.${system};
-      mpi = intel-mpi.packages.${system}.default;
+      # mpi = pkgs.mpich;
+      mpi =
+        if config.tacc_execution then intel-mpi.packages.${system}.default else pkgs.mpich;
 
       src = pkgs.fetchFromGitHub
         {
@@ -71,6 +74,7 @@
           mkdir -p $out/bin
           ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
           cp bin/* $out/bin
+          cp ${./config.json} $out/config.json
         '';
         distPhase = ''
           for f in $(ls $out/bin); do
