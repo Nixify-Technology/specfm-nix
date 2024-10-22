@@ -50,6 +50,7 @@
 
         buildPhase = ''
           mkdir -p $out/bin
+          cp ${./config.json} $out/config.json
           ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
           cp bin/* $out/bin
         '';
