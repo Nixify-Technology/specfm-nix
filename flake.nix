@@ -26,7 +26,6 @@
 
       config = nixpkgs.lib.trivial.importJSON ./config.json;
       shell = shell-utils.myShell.${system};
-      # mpi = pkgs.mpich;
       mpi =
         if config.tacc_execution then intel-mpi.packages.${system}.default else pkgs.mpich;
 
@@ -71,7 +70,6 @@
         dontInstall = true;
         doDist = true;
         buildPhase = ''
-          echo "Inside build phase..."
           mkdir -p $out/bin
           ./configure --enable-vectorization MPIFC=mpif90 FC=gfortran CC=gcc 'FLAGS_CHECK=-O2 -mcmodel=medium -Wunused -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow' CFLAGS="-std=c99" && make all
           cp bin/* $out/bin
